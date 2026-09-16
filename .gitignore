@@ -1,0 +1,43 @@
+# Gradle
+.gradle/
+build/
+**/build/
+
+# IntelliJ IDEA / Android Studio
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+captures/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Kotlin
+*.class
+*.kt.bak
+
+# Local properties
+local.properties
+keystore.properties
+
+# Android
+*.apk
+*.aab
+*.ap_
+*.dex
+.externalNativeBuild/
+.cxx/
+
+# Test results
+test-results/
+jacoco/
+*.exec
+
+# Misc
+*.swp
+*.swo
+*~
