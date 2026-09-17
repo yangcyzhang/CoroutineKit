@@ -3,6 +3,7 @@ package com.yangcyzhang.coroutinekit.ext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
@@ -49,6 +50,7 @@ suspend fun <T> suspendRunCatching(block: suspend () -> T): Result<T> = try {
 /**
  * Executes the given [block] within the specified timeout. If the timeout is exceeded,
  * returns [defaultValue] instead of throwing [kotlinx.coroutines.TimeoutCancellationException].
+ * Cancellation initiated by an outer coroutine scope is always propagated.
  *
  * This is a safer alternative to [withTimeout] when a fallback value is preferred
  * over an exception-based control flow.
@@ -73,11 +75,7 @@ suspend fun <T> withTimeoutOrDefault(
     block: suspend CoroutineScope.() -> T
 ): T = try {
     withTimeout(timeMillis, block)
-} catch (e: CancellationException) {
-    // withTimeout throws TimeoutCancellationException which IS-A CancellationException.
-    // We only want to catch the timeout case, not an outer scope cancellation.
-    // TimeoutCancellationException has a specific message we can check, but the safest
-    // approach in production is to return defaultValue for any cancellation here.
+} catch (_: TimeoutCancellationException) {
     defaultValue
 }
 

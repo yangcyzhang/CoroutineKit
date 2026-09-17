@@ -1,10 +1,10 @@
 package com.yangcyzhang.coroutinekit.ext
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.retryWhen
@@ -102,7 +102,8 @@ fun <T> Flow<T>.retryWithDelay(
  * Executes [action] on each emitted value without cancelling the Flow on exception.
  *
  * Unlike [onEach], if the [action] throws, the exception is caught and the Flow
- * continues processing subsequent items. This is useful for safe logging,
+ * continues processing subsequent items. [CancellationException] is always re-thrown.
+ * This is useful for safe logging,
  * analytics, or side-effect operations that should not affect the main data stream.
  *
  * Example:
@@ -121,15 +122,20 @@ fun <T> Flow<T>.retryWithDelay(
  */
 fun <T> Flow<T>.onEachCatching(action: suspend (T) -> Unit): Flow<T> =
     onEach { value ->
-        runCatching { action(value) }
-        // Exceptions from action are intentionally swallowed here.
-        // CancellationException from the outer scope will still propagate normally.
+        try {
+            action(value)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            // Exceptions from action are intentionally swallowed here.
+        }
     }
 
 /**
  * A variant of [flatMapLatest] that catches and ignores exceptions thrown
  * inside the [transform] block. When an exception occurs, no value is emitted
- * for that particular input and the flow continues normally.
+ * for that particular input and the flow continues normally. [CancellationException]
+ * is always re-thrown.
  *
  * @param transform a function to transform each upstream value into a new Flow
  * @return a Flow applying flatMapLatest with exception suppression
@@ -142,6 +148,8 @@ fun <T, R> Flow<T>.flatMapLatestCatching(
 ): Flow<R> = flatMapLatest { value ->
     try {
         transform(value)
+    } catch (e: CancellationException) {
+        throw e
     } catch (e: Exception) {
         flow { /* emit nothing on error */ }
     }
@@ -150,7 +158,7 @@ fun <T, R> Flow<T>.flatMapLatestCatching(
 /**
  * Maps each upstream value using [transform], filtering out both null results
  * and any exceptions thrown. Equivalent to combining [mapNotNull] with
- * safe exception handling.
+ * safe exception handling. [CancellationException] is always re-thrown.
  *
  * @param transform a suspending transform that may return null or throw
  * @return a Flow of non-null successfully transformed values
@@ -162,6 +170,8 @@ fun <T, R : Any> Flow<T>.mapNotNullCatching(
 ): Flow<R> = transform { value ->
     try {
         transform(value)?.let { emit(it) }
+    } catch (e: CancellationException) {
+        throw e
     } catch (_: Exception) {
         // Skip items that fail transformation
     }

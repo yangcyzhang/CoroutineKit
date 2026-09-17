@@ -115,7 +115,7 @@ val future: CompletableFuture<User> = suspendToFuture {
 ### 8. Java Interop — Callback → Flow
 
 ```kotlin
-val sensorFlow: Flow<SensorData> = callbackFlow(
+val sensorFlow: Flow<SensorData> = callbackToFlow(
     register = { onResult, onError ->
         sensorManager.register(object : SensorListener {
             override fun onData(d: SensorData) = onResult(d)
