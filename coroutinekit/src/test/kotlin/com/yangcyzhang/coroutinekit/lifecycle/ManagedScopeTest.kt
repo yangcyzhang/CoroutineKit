@@ -89,4 +89,23 @@ class ManagedScopeTest {
         assertTrue(sibling2Completed, "Sibling 2 should have completed despite other child failing")
         scope.close()
     }
+
+    @Test
+    fun `custom onError handler catches uncaught exceptions`() = runTest {
+        val capturedExceptions = mutableListOf<Throwable>()
+        val scope = ManagedScope(
+            dispatcher = StandardTestDispatcher(testScheduler),
+            onError = { capturedExceptions.add(it) }
+        )
+
+        scope.launch {
+            throw IllegalArgumentException("custom handler test")
+        }
+
+        testScheduler.advanceUntilIdle()
+
+        assertEquals(1, capturedExceptions.size)
+        assertTrue(capturedExceptions[0] is IllegalArgumentException)
+        scope.close()
+    }
 }
