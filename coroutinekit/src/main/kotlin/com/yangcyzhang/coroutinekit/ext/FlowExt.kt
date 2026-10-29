@@ -145,13 +145,15 @@ fun <T> Flow<T>.onEachCatching(action: suspend (T) -> Unit): Flow<T> =
 @Suppress("OPT_IN_USAGE")
 fun <T, R> Flow<T>.flatMapLatestCatching(
     transform: suspend (T) -> Flow<R>
-): Flow<R> = flatMapLatest { value ->
-    try {
-        transform(value)
-    } catch (e: CancellationException) {
-        throw e
-    } catch (e: Exception) {
-        flow { /* emit nothing on error */ }
+): Flow<R> = flow {
+    collect { value ->
+        try {
+            transform(value).collect { emit(it) }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            // suppress other exceptions and continue
+        }
     }
 }
 
