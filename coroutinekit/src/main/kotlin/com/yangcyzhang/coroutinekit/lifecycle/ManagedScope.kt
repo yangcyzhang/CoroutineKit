@@ -44,15 +44,18 @@ import kotlin.coroutines.CoroutineContext
  * @since 0.1.0
  */
 class ManagedScope(
-    dispatcher: CoroutineDispatcher = Dispatchers.Default
+    dispatcher: CoroutineDispatcher = Dispatchers.Default,
+    onError: ((Throwable) -> Unit)? = null
 ) : CoroutineScope, Closeable {
 
     private val supervisorJob = SupervisorJob()
 
     private val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
-        // Log or handle uncaught exceptions from child coroutines.
-        // By default, we print to stderr. Override by passing a custom handler.
-        System.err.println("[CoroutineKit/ManagedScope] Uncaught exception: $throwable")
+        if (onError != null) {
+            onError(throwable)
+        } else {
+            System.err.println("[CoroutineKit/ManagedScope] Uncaught exception: $throwable")
+        }
     }
 
     override val coroutineContext: CoroutineContext =
@@ -107,5 +110,7 @@ class ManagedScope(
  * @author yangcyzhang
  * @since 0.1.0
  */
-fun managedScope(dispatcher: CoroutineDispatcher = Dispatchers.Default): ManagedScope =
-    ManagedScope(dispatcher)
+fun managedScope(
+    dispatcher: CoroutineDispatcher = Dispatchers.Default,
+    onError: ((Throwable) -> Unit)? = null
+): ManagedScope = ManagedScope(dispatcher, onError)

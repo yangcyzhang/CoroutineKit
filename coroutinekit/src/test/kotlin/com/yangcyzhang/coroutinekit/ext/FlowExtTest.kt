@@ -1,6 +1,8 @@
 package com.yangcyzhang.coroutinekit.ext
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -113,6 +115,15 @@ class FlowExtTest {
         assertEquals(listOf(1, 2, 3), results)
     }
 
+    @Test
+    fun `onEachCatching propagates CancellationException`() = runTest {
+        assertFailsWith<CancellationException> {
+            flowOf(1)
+                .onEachCatching { throw CancellationException("cancel") }
+                .toList()
+        }
+    }
+
     // ───────────────────────── mapNotNullCatching ─────────────────────────
 
     @Test
@@ -133,5 +144,23 @@ class FlowExtTest {
             .toList()
 
         assertEquals(listOf("one"), results)
+    }
+
+    @Test
+    fun `mapNotNullCatching propagates CancellationException`() = runTest {
+        assertFailsWith<CancellationException> {
+            flowOf(1)
+                .mapNotNullCatching<Int, String> { throw CancellationException("cancel") }
+                .toList()
+        }
+    }
+
+    @Test
+    fun `flatMapLatestCatching propagates CancellationException`() = runTest {
+        assertFailsWith<CancellationException> {
+            flowOf(1)
+                .flatMapLatestCatching<Int, Int> { throw CancellationException("cancel") }
+                .toList()
+        }
     }
 }

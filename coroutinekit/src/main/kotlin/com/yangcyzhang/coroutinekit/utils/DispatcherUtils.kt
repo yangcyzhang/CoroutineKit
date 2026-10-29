@@ -38,7 +38,7 @@ object CoroutineKitDispatchers {
 
     /**
      * Dispatcher for main thread / UI operations.
-     * Defaults to [Dispatchers.Main].
+     * Defaults to [Dispatchers.Default] because this artifact also supports plain JVM.
      */
     var main: CoroutineDispatcher = Dispatchers.Default
         private set

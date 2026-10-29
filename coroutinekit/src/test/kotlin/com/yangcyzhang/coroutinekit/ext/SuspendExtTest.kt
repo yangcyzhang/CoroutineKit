@@ -3,6 +3,8 @@ package com.yangcyzhang.coroutinekit.ext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -56,6 +58,23 @@ class SuspendExtTest {
             "real value"
         }
         assertEquals("fallback", result)
+    }
+
+    @Test
+    fun `withTimeoutOrDefault propagates parent cancellation`() = runTest {
+        var returnedFallback = false
+        val job = launch {
+            withTimeoutOrDefault(timeMillis = 10_000, defaultValue = Unit) {
+                kotlinx.coroutines.awaitCancellation()
+            }
+            returnedFallback = true
+        }
+
+        testScheduler.runCurrent()
+        job.cancelAndJoin()
+
+        assertTrue(job.isCancelled)
+        assertTrue(!returnedFallback)
     }
 
     // ───────────────────────── retry ─────────────────────────
